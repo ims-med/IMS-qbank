@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>IMS Q-Bank | Internal Medicine Simplified</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="questions.js"></script>
   <style>
     :root {
       --primary: #1b6ca8;
@@ -23,32 +24,39 @@
     body { margin: 0; background: var(--bg); color: var(--text); user-select: none; -webkit-user-select: none; }
     
     .topbar {
-      background: #2c3e50; color: #fff; padding: 12px 16px;
-      display: flex; justify-content: space-between; align-items: center;
+      background: #2c3e50; color: #fff; padding: 11px 16px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
       position: sticky; top: 0; z-index: 20;
     }
-    .topbar h1 { margin: 0; font-size: 16px; letter-spacing: 0.5px; }
-    .badge { background: var(--primary); padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .topbar h1 { margin: 0; font-size: 15px; letter-spacing: 0.5px; white-space: nowrap; }
+    
+    .sys-select {
+      background: var(--primary); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+      padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: 600;
+      outline: none; cursor: pointer; max-width: 195px;
+    }
+    .sys-select option { background: #fff; color: #1e293b; }
 
     .container { max-width: 1100px; margin: 14px auto; padding: 0 12px; display: grid; grid-template-columns: 1fr 310px; gap: 14px; }
     @media (max-width: 820px) { .container { grid-template-columns: 1fr; } }
 
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; overflow: hidden; }
     
-    .q-meta { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 14px; }
-    .q-cat { font-weight: 700; color: var(--primary); font-size: 15px; }
-    .q-actions { display: flex; gap: 10px; align-items: center; }
+    .q-meta { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 14px; gap: 8px; }
+    .q-cat { font-weight: 700; color: var(--primary); font-size: 14.5px; }
+    .q-actions { display: flex; gap: 8px; align-items: center; }
     .flag-btn {
       background: #f8fafc; border: 1px solid var(--border); border-radius: 5px;
-      padding: 4px 10px; cursor: pointer; font-size: 13px; color: var(--muted); font-weight: 600;
+      padding: 4px 10px; cursor: pointer; font-size: 12.5px; color: var(--muted); font-weight: 600;
     }
     .flag-btn.flagged { background: #fef3c7; border-color: var(--amber); color: var(--amber); }
 
     .watermark {
-      position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg);
-      font-size: 18px; font-weight: 700; color: rgba(100, 116, 139, 0.14);
+      position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg);
+      font-size: 17px; font-weight: 700; color: rgba(100, 116, 139, 0.14);
       pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;
     }
+    .watermark.bottom { top: 75%; }
 
     .q-stem { font-size: 15.5px; line-height: 1.65; margin-bottom: 18px; position: relative; z-index: 6; }
     .options { display: flex; flex-direction: column; gap: 9px; position: relative; z-index: 6; }
@@ -95,14 +103,15 @@
     }
 
     .stats { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
-    .denied { text-align: center; padding: 50px 20px; }
+    .denied { text-align: center; padding: 40px 20px; }
+    .id-box { background: #f1f5f9; border: 1px dashed var(--primary); padding: 10px; border-radius: 6px; font-family: monospace; font-size: 16px; margin: 12px 0; user-select: all; -webkit-user-select: all; }
   </style>
 </head>
 <body>
 
 <div class="topbar">
-  <h1>IMS CLINICAL Q-BANK</h1>
-  <span class="badge" id="systemBadge">Respiratory</span>
+  <h1>IMS Q-BANK</h1>
+  <select id="systemSelect" class="sys-select" onchange="changeSystem(this.value)"></select>
 </div>
 
 <div id="app"></div>
@@ -111,59 +120,15 @@
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
-  const ALLOWED_USERS = []; 
-
-  const user = tg?.initDataUnsafe?.user || { id: "PREVIEW-001", first_name: "IMS Student", username: "guest" };
-  const watermarkText = `IMS | ${user.first_name} (${user.id})`;
-
-  const QUESTIONS = [
-    {
-      id: 1,
-      system: "Respiratory",
-      code: "IMS-RM-01",
-      stem: "A 28-year-old male is admitted with an acute severe exacerbation of asthma. He is initially treated with 100% oxygen, salbutamol nebulizers, and hydrocortisone 100 mg IV. Despite treatment, his oxygen saturation is 89% and respiratory rate is 30 breaths/minute. What is the SINGLE most appropriate next step in management?",
-      options: [
-        "Prednisolone 40 mg orally",
-        "Add ipratropium bromide 0.5 mg to nebulizers",
-        "Intravenous salbutamol",
-        "Intramuscular adrenaline",
-        "Stop administration of oxygen"
-      ],
-      answer: 1,
-      explanation: "In acute severe or life-threatening asthma not responding adequately to initial beta-2 agonist (salbutamol) and systemic steroids, the immediate next step according to NICE/BTS guidelines is adding nebulized ipratropium bromide (0.5 mg) every 4–6 hours. IV magnesium sulfate is considered if there is still poor response."
-    },
-    {
-      id: 2,
-      system: "Respiratory",
-      code: "IMS-RM-02",
-      stem: "A 66-year-old smoker presents with progressive dyspnea, dry cough, and clubbing of the fingers. Auscultation reveals fine bibasilar end-inspiratory crackles ('Velcro' crackles). High-resolution CT chest shows subpleural basal reticulation and honeycombing. Which medication slows disease progression in this condition?",
-      options: [
-        "Inhaled fluticasone",
-        "Pirfenidone",
-        "Long-term azithromycin",
-        "Oral prednisolone monotherapy",
-        "Methotrexate"
-      ],
-      answer: 1,
-      explanation: "The clinical picture and HRCT honeycombing are classic for Idiopathic Pulmonary Fibrosis (IPF). Antifibrotic agents (Pirfenidone or Nintedanib) are the mainstay of therapy to slow FVC decline. Immunosuppressants/steroids are harmful in chronic IPF."
-    },
-    {
-      id: 3,
-      system: "Cardiology",
-      code: "IMS-CV-01",
-      stem: "A 58-year-old man develops sudden central crushing chest pain radiating to his left jaw. ECG shows 3 mm ST-segment elevation in leads II, III, and aVF. His blood pressure is 82/50 mmHg, heart rate is 54 bpm, and JVP is elevated with clear lung fields. Which drug must be AVOIDED in his acute management?",
-      options: [
-        "Aspirin 300 mg",
-        "Glyceryl trinitrate (GTN)",
-        "Ticagrelor 180 mg",
-        "Intravenous normal saline bolus",
-        "Unfractionated heparin"
-      ],
-      answer: 1,
-      explanation: "Inferior STEMI (II, III, aVF) complicated by hypotension, elevated JVP, and clear lungs indicates Right Ventricular Infarction. Right ventricular preload is critical; nitrates (GTN) cause venodilation, severely dropping preload and causing profound circulatory collapse."
-    }
+  // قائمة المشتركين المصرّح لهم بالدخول (أضف رقم Telegram ID لكل طالب جديد هنا مفصولاً بفاصلة)
+  const ALLOWED_USERS = [
+    799345580 // حسابك الشخصي (Admin)
   ];
 
+  const user = tg?.initDataUnsafe?.user || { id: 799345580, first_name: "Dr. Ghassan", username: "admin" };
+  const watermarkText = `IMS | ${user.first_name} (${user.id})`;
+
+  let selectedSystem = "ALL";
   let currentIdx = 0;
   let filter = "all";
   let answers = JSON.parse(localStorage.getItem("ims_answers") || "{}");
@@ -174,38 +139,69 @@
     localStorage.setItem("ims_flags", JSON.stringify(flags));
   }
 
+  function initSystems() {
+    const select = document.getElementById("systemSelect");
+    const systems = [...new Set(QUESTIONS.map(q => q.system))];
+    let html = `<option value="ALL">All Systems (${QUESTIONS.length})</option>`;
+    systems.forEach(sys => {
+      const count = QUESTIONS.filter(q => q.system === sys).length;
+      html += `<option value="${sys}">${sys} (${count})</option>`;
+    });
+    select.innerHTML = html;
+  }
+
+  function changeSystem(sys) {
+    selectedSystem = sys;
+    currentIdx = 0;
+    filter = "all";
+    render();
+  }
+
   function render() {
     const app = document.getElementById("app");
-    if (ALLOWED_USERS.length > 0 && !ALLOWED_USERS.includes(user.id)) {
+    
+    // التحقق من صلاحية المشترك
+    if (ALLOWED_USERS.length > 0 && !ALLOWED_USERS.includes(Number(user.id))) {
+      document.getElementById("systemSelect").style.display = "none";
       app.innerHTML = `<div class="card denied" style="margin:20px;">
-        <h3>عذراً، هذا البنك متاح لمشتركي IMS Clinical Hub فقط</h3>
-        <p>معرّف حسابك: <b>${user.id}</b></p>
-        <p>للاشتراك وتفعيل حسابك تواصل مع: <b>@IMSsimp</b></p>
+        <h3>🔒 بنك الأسئلة مخصص لمشتركي IMS Clinical Hub</h3>
+        <p>للاشتراك وتفعيل حسابك، انسخ رقم المعرّف الخاص بك أدناه وأرسله إلى <b>@IMSsimp</b>:</p>
+        <div class="id-box">${user.id}</div>
       </div>`;
       return;
     }
 
-    const q = QUESTIONS[currentIdx];
-    document.getElementById("systemBadge").textContent = q.system;
+    const systemQuestions = selectedSystem === "ALL" 
+      ? QUESTIONS 
+      : QUESTIONS.filter(q => q.system === selectedSystem);
+
+    if (systemQuestions.length === 0) {
+      app.innerHTML = `<div class="card" style="margin:20px;text-align:center;">لا توجد أسئلة في هذا القسم حالياً.</div>`;
+      return;
+    }
+
+    if (currentIdx >= systemQuestions.length) currentIdx = 0;
+    const q = systemQuestions[currentIdx];
     const userAns = answers[q.id];
     const isAnswered = userAns !== undefined;
     const isFlagged = !!flags[q.id];
 
-    const filteredQuestions = QUESTIONS.filter(item => {
+    const gridQuestions = systemQuestions.filter(item => {
       if (filter === "flagged") return !!flags[item.id];
       if (filter === "wrong") return answers[item.id] !== undefined && answers[item.id] !== item.answer;
       return true;
     });
 
-    const correctCount = QUESTIONS.filter(item => answers[item.id] === item.answer).length;
-    const wrongCount = QUESTIONS.filter(item => answers[item.id] !== undefined && answers[item.id] !== item.answer).length;
+    const correctCount = systemQuestions.filter(item => answers[item.id] === item.answer).length;
+    const wrongCount = systemQuestions.filter(item => answers[item.id] !== undefined && answers[item.id] !== item.answer).length;
 
     app.innerHTML = `
       <div class="container">
         <div class="card">
           <div class="watermark">${watermarkText}</div>
+          <div class="watermark bottom">${watermarkText}</div>
           <div class="q-meta">
-            <span class="q-cat">${q.system} • Question ${currentIdx + 1} of ${QUESTIONS.length}</span>
+            <span class="q-cat">${q.system} • Q ${currentIdx + 1} / ${systemQuestions.length}</span>
             <div class="q-actions">
               <span style="font-size:12px;color:var(--muted);">${q.code}</span>
               <button class="flag-btn ${isFlagged ? 'flagged' : ''}" onclick="toggleFlag(${q.id})">
@@ -238,20 +234,20 @@
 
           <div class="nav-row">
             <button class="btn secondary" onclick="prevQ()" ${currentIdx === 0 ? 'disabled' : ''}>← Previous</button>
-            <button class="btn" onclick="nextQ()" ${currentIdx === QUESTIONS.length - 1 ? 'disabled' : ''}>Next →</button>
+            <button class="btn" onclick="nextQ(${systemQuestions.length})" ${currentIdx === systemQuestions.length - 1 ? 'disabled' : ''}>Next →</button>
           </div>
         </div>
 
         <div class="card">
           <div class="filter-tabs">
-            <button class="tab ${filter === 'all' ? 'active' : ''}" onclick="setFilter('all')">All (${QUESTIONS.length})</button>
+            <button class="tab ${filter === 'all' ? 'active' : ''}" onclick="setFilter('all')">All (${systemQuestions.length})</button>
             <button class="tab ${filter === 'flagged' ? 'active' : ''}" onclick="setFilter('flagged')">Flagged</button>
             <button class="tab ${filter === 'wrong' ? 'active' : ''}" onclick="setFilter('wrong')">Incorrect</button>
           </div>
 
           <div class="grid">
-            ${filteredQuestions.map(item => {
-              const realIdx = QUESTIONS.findIndex(x => x.id === item.id);
+            ${gridQuestions.map(item => {
+              const realIdx = systemQuestions.findIndex(x => x.id === item.id);
               let cls = "q-num";
               if (realIdx === currentIdx) cls += " current";
               if (answers[item.id] !== undefined) {
@@ -282,13 +278,14 @@
   function setFilter(f) { filter = f; render(); }
   function jumpTo(idx) { currentIdx = idx; render(); }
   function prevQ() { if (currentIdx > 0) { currentIdx--; render(); } }
-  function nextQ() { if (currentIdx < QUESTIONS.length - 1) { currentIdx++; render(); } }
+  function nextQ(total) { if (currentIdx < total - 1) { currentIdx++; render(); } }
   function resetProgress() {
     if (confirm("هل تريد تصفير جميع إجاباتك والبدء من جديد؟")) {
       answers = {}; flags = {}; saveState(); currentIdx = 0; render();
     }
   }
 
+  initSystems();
   render();
 </script>
 </body>
