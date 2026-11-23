@@ -40,26 +40,40 @@
     .header {
       background: #1e293b;
       color: #fff;
-      padding: 14px 18px;
-      display: flex;
+      padding: 12px 18px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 50;
       box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
-    .header span { font-weight: 800; letter-spacing: 0.5px; font-size: 16px; }
+    .header span {
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      font-size: 16px;
+      justify-self: start;
+    }
     select {
       background: var(--accent);
       color: #fff;
       border: none;
-      padding: 8px 14px;
+      padding: 8px 16px;
       border-radius: 8px;
       font-weight: 600;
       font-size: 14px;
       outline: none;
       cursor: pointer;
+      justify-self: center;
+    }
+    @media (max-width: 480px) {
+      .header {
+        display: flex;
+        justify-content: flex-start;
+        gap: 12px;
+        padding-right: 95px;
+      }
     }
     .container { max-width: 780px; margin: 18px auto; padding: 0 14px; position: relative; }
     .card {
@@ -352,7 +366,6 @@
       if (currentIdx < list.length - 1) { currentIdx++; render(); }
     }
   </script>
-  <!-- تحميل ملف الأسئلة مع كسر الكاش دائماً ليظهر أي سؤال جديد فوراً -->
   <script>
     const qScript = document.createElement("script");
     qScript.src = "questions.js?v=" + Date.now();
