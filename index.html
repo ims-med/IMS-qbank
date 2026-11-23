@@ -27,12 +27,20 @@
       color: var(--text);
       user-select: none;
       -webkit-user-select: none;
-      padding-bottom: 70px;
+      -webkit-touch-callout: none;
+      padding-bottom: 80px;
+      transition: filter 0.15s ease;
+    }
+    body.blurred {
+      filter: blur(14px);
+    }
+    @media print {
+      body { display: none !important; }
     }
     .header {
       background: #1e293b;
       color: #fff;
-      padding: 12px 16px;
+      padding: 14px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -41,25 +49,25 @@
       z-index: 50;
       box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
-    .header span { font-weight: 800; letter-spacing: 0.5px; font-size: 15px; }
+    .header span { font-weight: 800; letter-spacing: 0.5px; font-size: 16px; }
     select {
       background: var(--accent);
       color: #fff;
       border: none;
-      padding: 7px 12px;
+      padding: 8px 14px;
       border-radius: 8px;
       font-weight: 600;
-      font-size: 13px;
+      font-size: 14px;
       outline: none;
       cursor: pointer;
     }
-    .container { max-width: 680px; margin: 14px auto; padding: 0 12px; position: relative; }
+    .container { max-width: 780px; margin: 18px auto; padding: 0 14px; position: relative; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      border-radius: 14px;
+      padding: 22px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
       position: relative;
       overflow: hidden;
     }
@@ -67,16 +75,16 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
-      font-size: 13px;
+      margin-bottom: 16px;
+      font-size: 13.5px;
     }
     .sys-tag { color: var(--accent); font-weight: 700; }
-    .q-code { color: var(--muted); font-family: monospace; font-size: 12px; }
+    .q-code { color: var(--muted); font-family: monospace; font-size: 12.5px; }
     .stem {
-      font-size: 15.5px;
-      line-height: 1.65;
+      font-size: 16px;
+      line-height: 1.7;
       color: #1e293b;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       white-space: pre-line;
       position: relative;
       z-index: 2;
@@ -84,30 +92,30 @@
     .option {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      padding: 12px 14px;
+      gap: 12px;
+      padding: 13px 15px;
       border: 1.5px solid var(--border);
       border-radius: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 11px;
       cursor: pointer;
       transition: 0.15s;
-      background: #fff;
+      background: rgba(255,255,255,0.92);
       position: relative;
       z-index: 2;
     }
     .option:hover { border-color: #93c5fd; background: #f8fafc; }
     .option.correct { background: var(--correct-bg); border-color: var(--correct-border); }
     .option.wrong { background: var(--wrong-bg); border-color: var(--wrong-border); }
-    .opt-letter { font-weight: 700; color: #334155; min-width: 22px; }
-    .opt-text { font-size: 14.5px; line-height: 1.45; color: #0f172a; }
+    .opt-letter { font-weight: 700; color: #334155; min-width: 24px; }
+    .opt-text { font-size: 15px; line-height: 1.5; color: #0f172a; }
     .explanation {
-      margin-top: 16px;
-      padding: 14px;
+      margin-top: 18px;
+      padding: 15px;
       background: #f1f5f9;
       border-left: 4px solid var(--accent);
       border-radius: 8px;
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 14.5px;
+      line-height: 1.65;
       color: #1e293b;
       white-space: pre-line;
       display: none;
@@ -119,7 +127,7 @@
       bottom: 0; left: 0; right: 0;
       background: #fff;
       border-top: 1px solid var(--border);
-      padding: 10px 16px;
+      padding: 12px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -129,7 +137,7 @@
       background: #1e293b;
       color: #fff;
       border: none;
-      padding: 9px 18px;
+      padding: 10px 20px;
       border-radius: 8px;
       font-weight: 600;
       font-size: 14px;
@@ -140,20 +148,21 @@
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 40;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-around;
-      align-items: center;
-      opacity: 0.08;
+      z-index: 45;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      place-items: center;
+      opacity: 0.13;
       overflow: hidden;
     }
     .wm-text {
-      transform: rotate(-24deg);
-      font-size: 18px;
+      transform: rotate(-26deg);
+      font-size: 16px;
       font-weight: 800;
       color: #0f172a;
       white-space: nowrap;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>
@@ -166,12 +175,17 @@
 
   <div id="app"></div>
 
-  <script src="questions.js"></script>
   <script>
     const tg = window.Telegram?.WebApp;
-    if (tg) { tg.ready(); tg.expand(); }
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      if (typeof tg.requestFullscreen === "function") {
+        try { tg.requestFullscreen(); } catch (e) {}
+      }
+    }
 
-    // قائمة المشتركين المصرّح لهم بالدخول (أضف رقم Telegram ID لكل طالب جديد هنا مفصولاً بفاصلة)
+    // قائمة المشتركين المصرّح لهم بالدخول
     const ALLOWED_USERS = [
       8799345580, // حسابك الشخصي (Admin)
       798256935
@@ -222,15 +236,39 @@
       throw new Error("Unauthorized user");
     }
 
-    // إضافة طبقة العلامة المائية لحماية المحتوى
+    // شبكة علامات مائية مكثفة فوق كامل الشاشة
     const wmLayer = document.createElement("div");
     wmLayer.className = "watermark-layer";
-    wmLayer.innerHTML = `<div class="wm-text">${watermarkText}</div><div class="wm-text">${watermarkText}</div><div class="wm-text">${watermarkText}</div>`;
+    wmLayer.innerHTML = Array(8).fill(`<div class="wm-text">${watermarkText}</div>`).join("");
     document.body.appendChild(wmLayer);
+
+    // تشويش فوري عند فقدان تركيز النافذة أو محاولة تصوير الشاشة
+    window.addEventListener("blur", () => document.body.classList.add("blurred"));
+    window.addEventListener("focus", () => document.body.classList.remove("blurred"));
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) document.body.classList.add("blurred");
+      else document.body.classList.remove("blurred");
+    });
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "PrintScreen") {
+        document.body.classList.add("blurred");
+        setTimeout(() => document.body.classList.remove("blurred"), 1500);
+      }
+    });
+    document.addEventListener("contextmenu", e => e.preventDefault());
 
     let selectedSystem = "ALL";
     let currentIdx = 0;
     let answers = JSON.parse(localStorage.getItem("ims_answers") || "{}");
+
+    function startApp() {
+      if (typeof QUESTIONS === "undefined" || !Array.isArray(QUESTIONS)) {
+        document.getElementById("app").innerHTML = `<div class="container"><div class="card">جاري تحميل الأسئلة... اضغط Reload Page إذا تأخر التحميل.</div></div>`;
+        return;
+      }
+      initSystems();
+      render();
+    }
 
     function initSystems() {
       const select = document.getElementById("systemSelect");
@@ -313,10 +351,13 @@
       const list = getFilteredQuestions();
       if (currentIdx < list.length - 1) { currentIdx++; render(); }
     }
-
-    document.addEventListener("contextmenu", e => e.preventDefault());
-    initSystems();
-    render();
+  </script>
+  <!-- تحميل ملف الأسئلة مع كسر الكاش دائماً ليظهر أي سؤال جديد فوراً -->
+  <script>
+    const qScript = document.createElement("script");
+    qScript.src = "questions.js?v=" + Date.now();
+    qScript.onload = startApp;
+    document.body.appendChild(qScript);
   </script>
 </body>
 </html>
