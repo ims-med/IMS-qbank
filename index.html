@@ -29,14 +29,8 @@
       -webkit-user-select: none;
       -webkit-touch-callout: none;
       padding-bottom: 80px;
-      transition: filter 0.15s ease;
     }
-    body.blurred {
-      filter: blur(14px);
-    }
-    @media print {
-      body { display: none !important; }
-    }
+    @media print { body { display: none !important; } }
     .header {
       background: #1e293b;
       color: #fff;
@@ -49,12 +43,7 @@
       z-index: 50;
       box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
-    .header span {
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      font-size: 16px;
-      justify-self: start;
-    }
+    .header span { font-weight: 800; letter-spacing: 0.5px; font-size: 16px; justify-self: start; }
     select {
       background: var(--accent);
       color: #fff;
@@ -68,12 +57,7 @@
       justify-self: center;
     }
     @media (max-width: 480px) {
-      .header {
-        display: flex;
-        justify-content: flex-start;
-        gap: 12px;
-        padding-right: 95px;
-      }
+      .header { display: flex; justify-content: flex-start; gap: 12px; padding-right: 95px; }
     }
     .container { max-width: 780px; margin: 18px auto; padding: 0 14px; position: relative; }
     .card {
@@ -85,24 +69,10 @@
       position: relative;
       overflow: hidden;
     }
-    .meta-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      font-size: 13.5px;
-    }
+    .meta-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 13.5px; }
     .sys-tag { color: var(--accent); font-weight: 700; }
     .q-code { color: var(--muted); font-family: monospace; font-size: 12.5px; }
-    .stem {
-      font-size: 16px;
-      line-height: 1.7;
-      color: #1e293b;
-      margin-bottom: 20px;
-      white-space: pre-line;
-      position: relative;
-      z-index: 2;
-    }
+    .stem { font-size: 16px; line-height: 1.7; color: #1e293b; margin-bottom: 20px; white-space: pre-line; position: relative; z-index: 2; }
     .option {
       display: flex;
       align-items: flex-start;
@@ -170,14 +140,7 @@
       opacity: 0.13;
       overflow: hidden;
     }
-    .wm-text {
-      transform: rotate(-26deg);
-      font-size: 16px;
-      font-weight: 800;
-      color: #0f172a;
-      white-space: nowrap;
-      letter-spacing: 0.5px;
-    }
+    .wm-text { transform: rotate(-26deg); font-size: 16px; font-weight: 800; color: #0f172a; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -199,9 +162,8 @@
       }
     }
 
-    // قائمة المشتركين المصرّح لهم بالدخول
     const ALLOWED_USERS = [
-      8799345580, // حسابك الشخصي (Admin)
+      8799345580,
       798256935
     ];
 
@@ -217,10 +179,10 @@
             <p style="color:#475569; font-size:15px; line-height:1.6;">
               للاشتراك وتفعيل حسابك، انسخ رقم المعرّف الخاص بك أدناه وأرسله إلى <strong>@IMSsimp</strong>:
             </p>
-            <div id="userIdBox" style="background:#f1f5f9; border:1.5px dashed #94a3b8; padding:12px; border-radius:8px; font-family:monospace; font-size:19px; font-weight:bold; color:#0f172a; margin:16px 0 12px; user-select:all; -webkit-user-select:all;">
+            <div style="background:#f1f5f9; border:1.5px dashed #94a3b8; padding:12px; border-radius:8px; font-family:monospace; font-size:19px; font-weight:bold; color:#0f172a; margin:16px 0 12px; user-select:all; -webkit-user-select:all;">
               ${user.id}
             </div>
-            <button id="copyIdBtn" onclick="copyUserId('${user.id}')" style="background:#2563eb; color:#ffffff; border:none; padding:12px 22px; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; width:100%; transition:0.2s;">
+            <button id="copyIdBtn" onclick="copyUserId('${user.id}')" style="background:#2563eb; color:#ffffff; border:none; padding:12px 22px; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; width:100%;">
               📋 نسخ رقم المعرّف
             </button>
           </div>
@@ -250,34 +212,41 @@
       throw new Error("Unauthorized user");
     }
 
-    // شبكة علامات مائية مكثفة فوق كامل الشاشة
+    // فك تشفير خزنة الأسئلة في الذاكرة للمشتركين المصرح لهم فقط
+    function unlockVault() {
+      if (typeof IMS_VAULT !== "undefined" && IMS_VAULT) {
+        try {
+          const reversed = IMS_VAULT.split("").reverse().join("");
+          const binary = atob(reversed);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          const jsonStr = new TextDecoder("utf-8").decode(bytes);
+          return JSON.parse(jsonStr);
+        } catch (e) {
+          console.error("Vault unlock error:", e);
+          return [];
+        }
+      }
+      if (typeof QUESTIONS !== "undefined" && Array.isArray(QUESTIONS)) return QUESTIONS;
+      return [];
+    }
+
     const wmLayer = document.createElement("div");
     wmLayer.className = "watermark-layer";
     wmLayer.innerHTML = Array(8).fill(`<div class="wm-text">${watermarkText}</div>`).join("");
     document.body.appendChild(wmLayer);
 
-    // تشويش فوري عند فقدان تركيز النافذة أو محاولة تصوير الشاشة
-    window.addEventListener("blur", () => document.body.classList.add("blurred"));
-    window.addEventListener("focus", () => document.body.classList.remove("blurred"));
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) document.body.classList.add("blurred");
-      else document.body.classList.remove("blurred");
-    });
-    document.addEventListener("keyup", (e) => {
-      if (e.key === "PrintScreen") {
-        document.body.classList.add("blurred");
-        setTimeout(() => document.body.classList.remove("blurred"), 1500);
-      }
-    });
     document.addEventListener("contextmenu", e => e.preventDefault());
 
+    let Q_LIST = [];
     let selectedSystem = "ALL";
     let currentIdx = 0;
     let answers = JSON.parse(localStorage.getItem("ims_answers") || "{}");
 
     function startApp() {
-      if (typeof QUESTIONS === "undefined" || !Array.isArray(QUESTIONS)) {
-        document.getElementById("app").innerHTML = `<div class="container"><div class="card">جاري تحميل الأسئلة... اضغط Reload Page إذا تأخر التحميل.</div></div>`;
+      Q_LIST = unlockVault();
+      if (!Q_LIST.length) {
+        document.getElementById("app").innerHTML = `<div class="container"><div class="card">No questions loaded yet.</div></div>`;
         return;
       }
       initSystems();
@@ -286,25 +255,20 @@
 
     function initSystems() {
       const select = document.getElementById("systemSelect");
-      const systems = [...new Set(QUESTIONS.map(q => q.system))];
-      let html = `<option value="ALL">All Systems (${QUESTIONS.length})</option>`;
+      const systems = [...new Set(Q_LIST.map(q => q.system))];
+      let html = `<option value="ALL">All Systems (${Q_LIST.length})</option>`;
       systems.forEach(sys => {
-        const count = QUESTIONS.filter(q => q.system === sys).length;
+        const count = Q_LIST.filter(q => q.system === sys).length;
         html += `<option value="${sys}">${sys} (${count})</option>`;
       });
       select.innerHTML = html;
     }
 
     function getFilteredQuestions() {
-      if (selectedSystem === "ALL") return QUESTIONS;
-      return QUESTIONS.filter(q => q.system === selectedSystem);
+      return selectedSystem === "ALL" ? Q_LIST : Q_LIST.filter(q => q.system === selectedSystem);
     }
 
-    function changeSystem(val) {
-      selectedSystem = val;
-      currentIdx = 0;
-      render();
-    }
+    function changeSystem(val) { selectedSystem = val; currentIdx = 0; render(); }
 
     function selectOption(qId, optIdx) {
       if (answers[qId] !== undefined) return;
@@ -361,10 +325,7 @@
     }
 
     function prevQ() { if (currentIdx > 0) { currentIdx--; render(); } }
-    function nextQ() {
-      const list = getFilteredQuestions();
-      if (currentIdx < list.length - 1) { currentIdx++; render(); }
-    }
+    function nextQ() { const list = getFilteredQuestions(); if (currentIdx < list.length - 1) { currentIdx++; render(); } }
   </script>
   <script>
     const qScript = document.createElement("script");
